@@ -441,16 +441,30 @@ export function createUI({ classInfo, tiers, classmates, onPersonSaved, onPerson
 
   // ---------- articles ----------
   const articlesBtn = $('#articles-btn');
+  const writeArticleBtn = $('#write-article-btn');
   const articlesPanel = $('#articles');
   const articlesList = $('#articles-list');
   const articleReader = $('#article-reader');
   const articleForm = $('#article-form');
   const articleWriteBtn = $('#article-write-btn');
   const articleStatus = $('.edit-status', articleForm);
+  const roleHint = $('#role-hint');
   /** @type {{ raw: string, mime: string, dataUrl: string } | null} */
   let articlePendingPhoto = null;
 
-  if (isMod) articleWriteBtn.hidden = false;
+  if (isMod) {
+    articleWriteBtn.hidden = false;
+    if (writeArticleBtn) writeArticleBtn.hidden = false;
+  }
+  if (roleHint) {
+    const ip = roles.ip || '?';
+    if (isMod) {
+      roleHint.hidden = true;
+    } else {
+      roleHint.hidden = false;
+      roleHint.textContent = `Статьи и глубину правят модеры. Сейчас сайт видит IP: ${ip}`;
+    }
+  }
 
   function fillArticlePersonSelect() {
     const sel = articleForm.personId;
@@ -552,6 +566,10 @@ export function createUI({ classInfo, tiers, classmates, onPersonSaved, onPerson
   }
 
   articlesBtn.addEventListener('click', openArticles);
+  writeArticleBtn?.addEventListener('click', () => {
+    openArticles();
+    openArticleForm();
+  });
   articlesPanel.querySelectorAll('[data-articles-close]').forEach((el) =>
     el.addEventListener('click', closeArticles),
   );

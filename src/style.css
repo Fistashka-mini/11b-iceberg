@@ -654,8 +654,31 @@ body.modal-open {
   bottom: 5vh;
   z-index: 4;
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   pointer-events: none;
+  max-width: 90vw;
+}
+
+.role-hint {
+  position: fixed;
+  left: 5vw;
+  bottom: calc(5vh + 52px);
+  z-index: 4;
+  margin: 0;
+  max-width: min(420px, 90vw);
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(8, 24, 46, 0.75);
+  border: 1px solid var(--glass-border);
+  color: var(--ink-dim);
+  font-size: 11px;
+  line-height: 1.4;
+  pointer-events: none;
+}
+
+.role-hint[hidden] {
+  display: none !important;
 }
 
 #toolbar button {
