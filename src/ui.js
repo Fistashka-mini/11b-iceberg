@@ -495,6 +495,8 @@ export function createUI({ classInfo, tiers, classmates, onPersonSaved, onPerson
     articlesList.innerHTML = '<p class="log-loading">Загружаю статьи…</p>';
     try {
       const items = await listArticles();
+      // если уже открыли форму — не перетираем
+      if (!articleForm.hidden) return;
       if (!items.length) {
         articlesList.innerHTML = '<p class="log-empty">Пока нет статей. Модераторы могут написать первую.</p>';
         return;
@@ -510,6 +512,7 @@ export function createUI({ classInfo, tiers, classmates, onPersonSaved, onPerson
         .join('');
       articlesList._cache = items;
     } catch (err) {
+      if (!articleForm.hidden) return;
       articlesList.innerHTML = `<p class="log-empty">${escapeHtml(err.message || 'Ошибка загрузки')}</p>`;
     }
   }
@@ -517,6 +520,7 @@ export function createUI({ classInfo, tiers, classmates, onPersonSaved, onPerson
   async function openArticleReader(article) {
     articlesList.hidden = true;
     articleForm.hidden = true;
+    articleForm.style.display = '';
     articleReader.hidden = false;
     let photoHtml = '';
     if (article.photo) {
@@ -538,9 +542,14 @@ export function createUI({ classInfo, tiers, classmates, onPersonSaved, onPerson
 
   function openArticleForm() {
     if (!isMod) return;
+    articlesPanel.hidden = false;
+    document.body.classList.add('modal-open');
     articlesList.hidden = true;
     articleReader.hidden = true;
     articleForm.hidden = false;
+    // убираем атрибут hidden у формы на всякий случай (CSS !important)
+    articleForm.removeAttribute('hidden');
+    articleForm.style.display = 'grid';
     articleForm.reset();
     articlePendingPhoto = null;
     fillArticlePersonSelect();
@@ -550,31 +559,34 @@ export function createUI({ classInfo, tiers, classmates, onPersonSaved, onPerson
     setStatus(articleStatus, '');
   }
 
-  function openArticles() {
+  function openArticles({ write = false } = {}) {
     closeProfile();
     closeAdd();
     closeArchive();
     articlesPanel.hidden = false;
+    articlesPanel.removeAttribute('hidden');
     document.body.classList.add('modal-open');
-    renderArticlesList();
+    if (write) openArticleForm();
+    else renderArticlesList();
   }
 
   function closeArticles() {
     if (articlesPanel.hidden) return;
     articlesPanel.hidden = true;
+    articleForm.style.display = '';
     if (profile.hidden && addModal.hidden && archive.hidden) document.body.classList.remove('modal-open');
   }
 
-  articlesBtn.addEventListener('click', openArticles);
-  writeArticleBtn?.addEventListener('click', () => {
-    openArticles();
-    openArticleForm();
-  });
+  articlesBtn.addEventListener('click', () => openArticles());
+  writeArticleBtn?.addEventListener('click', () => openArticles({ write: true }));
   articlesPanel.querySelectorAll('[data-articles-close]').forEach((el) =>
     el.addEventListener('click', closeArticles),
   );
   articleWriteBtn.addEventListener('click', openArticleForm);
-  articleForm.querySelector('[data-art-cancel]')?.addEventListener('click', () => renderArticlesList());
+  articleForm.querySelector('[data-art-cancel]')?.addEventListener('click', () => {
+    articleForm.style.display = '';
+    renderArticlesList();
+  });
 
   articlesList.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-open-article]');

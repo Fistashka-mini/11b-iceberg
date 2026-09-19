@@ -711,9 +711,10 @@ body.modal-open {
   /* inherits toolbar button */
 }
 
-/* ---------- архив (логи) ---------- */
+/* ---------- архив / статьи / добавить ---------- */
 
 #archive,
+#articles,
 #add-modal {
   position: fixed;
   inset: 0;
@@ -726,8 +727,9 @@ body.modal-open {
 }
 
 #archive[hidden],
+#articles[hidden],
 #add-modal[hidden] {
-  display: none;
+  display: none !important;
 }
 
 .archive-backdrop {
