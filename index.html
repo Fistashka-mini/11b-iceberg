@@ -11,8 +11,8 @@
       href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;500;700;900&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap"
       rel="stylesheet"
     />
-    <script type="module" crossorigin src="./assets/index-DRPIkLSG.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-duNpLWzH.css">
+    <script type="module" crossorigin src="./assets/index-DoVuvePn.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-e7cmyd7I.css">
   </head>
   <body>
     <div id="loader">
@@ -99,6 +99,15 @@
             Раздел (глубина)
             <select name="tier"></select>
           </label>
+          <label class="photo-field">
+            Фото на аватаре
+            <div class="photo-row">
+              <img class="photo-preview" alt="" hidden />
+              <input type="file" name="photo" accept="image/*" />
+              <button type="button" class="btn-photo-clear">Убрать фото</button>
+            </div>
+            <span class="photo-hint">jpg / png / webp — сожмётся само, увидят все</span>
+          </label>
           <label>
             Описание
             <textarea name="about" rows="5" maxlength="450" placeholder="Истории, мемы, легенды…"></textarea>
@@ -148,6 +157,13 @@
           <label>
             Подпись
             <input name="nickname" maxlength="80" placeholder="необязательно" />
+          </label>
+          <label class="photo-field">
+            Фото на аватаре
+            <div class="photo-row">
+              <img class="photo-preview" alt="" hidden />
+              <input type="file" name="photo" accept="image/*" />
+            </div>
           </label>
           <label>
             Описание
