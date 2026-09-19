@@ -78,6 +78,9 @@ export function createUI({ classInfo, tiers, classmates }) {
       .filter((p) => p.trim())
       .map((p) => `<p>${escapeHtml(p.trim()).replace(/\n/g, '<br>')}</p>`)
       .join('');
+    if (!aboutEl.innerHTML) {
+      aboutEl.innerHTML = '<p style="opacity:0.45">Пока пусто — сюда позже добавятся истории и мемы.</p>';
+    }
 
     factsEl.innerHTML = (person.facts ?? []).map((f) => `<li>${escapeHtml(f)}</li>`).join('');
 
@@ -155,6 +158,50 @@ export function createUI({ classInfo, tiers, classmates }) {
   window.addEventListener('popstate', syncWithHash);
   syncWithHash();
 
+  // ---------- архив (только владелец) ----------
+  const archiveBtn = $('#archive-btn');
+  const archive = $('#archive');
+  const archiveList = $('#archive-list');
+  const archiveCount = $('#archive-count');
+
+  function openArchive() {
+    if (archive.hidden === false) return;
+    closeProfile();
+    archiveCount.textContent = String(classmates.length);
+    archiveList.innerHTML = classmates
+      .map(
+        (p) => `
+      <li data-id="${escapeHtml(p.id)}">
+        <span class="archive-full">${escapeHtml(p.fullName || p.name)}</span>
+        <span class="archive-short">${escapeHtml(p.name)}</span>
+      </li>`,
+      )
+      .join('');
+    archive.hidden = false;
+    document.body.classList.add('modal-open');
+  }
+
+  function closeArchive() {
+    if (archive.hidden) return;
+    archive.hidden = true;
+    if (profile.hidden) document.body.classList.remove('modal-open');
+  }
+
+  archive.querySelectorAll('[data-archive-close]').forEach((el) => el.addEventListener('click', closeArchive));
+  archiveBtn.addEventListener('click', openArchive);
+  archiveList.addEventListener('click', (e) => {
+    const li = e.target.closest('li[data-id]');
+    if (!li) return;
+    const person = classmates.find((c) => c.id === li.dataset.id);
+    if (!person) return;
+    closeArchive();
+    openProfile(person);
+  });
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !archive.hidden) closeArchive();
+  });
+
   // ---------- глубиномер / заголовок ----------
   const depthValue = $('#depth-value');
   let lastDepth = -1;
@@ -163,6 +210,11 @@ export function createUI({ classInfo, tiers, classmates }) {
     showTooltip,
     openProfile,
     closeProfile,
+    openArchive,
+    closeArchive,
+    enableArchive() {
+      archiveBtn.hidden = false;
+    },
     isProfileOpen: () => !profile.hidden,
 
     /** Вызывается каждый кадр */

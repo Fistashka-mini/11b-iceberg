@@ -1,6 +1,7 @@
 import './style.css';
 import { IcebergScene } from './scene.js';
 import { createUI } from './ui.js';
+import { checkOwnerAccess } from './owner.js';
 import { CLASS_INFO, TIERS, CLASSMATES } from './data/classmates.js';
 
 const canvas = document.getElementById('scene');
@@ -74,7 +75,12 @@ function loop() {
 }
 
 async function start() {
-  await Promise.all([placeClassmates(), document.fonts?.ready ?? Promise.resolve()]);
+  const [, owner] = await Promise.all([
+    placeClassmates(),
+    checkOwnerAccess(),
+    document.fonts?.ready ?? Promise.resolve(),
+  ]);
+  if (owner.isOwner) ui.enableArchive();
   onScroll();
   scene.progress = scene.targetProgress;
   loop();

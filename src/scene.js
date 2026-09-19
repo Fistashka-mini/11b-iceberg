@@ -6,8 +6,8 @@ import { createParticles } from './particles.js';
 import { createLightShafts } from './shafts.js';
 import { drawAvatar } from './avatar.js';
 
-const MARKER_SIZE = 2.4;
-const MARKER_SIZE_HOVER = 3.0;
+const MARKER_SIZE = 1.85;
+const MARKER_SIZE_HOVER = 2.4;
 
 const SKY_FOG = new THREE.Color(0xe4f1fb);
 const DEEP_A = new THREE.Color(0x1477b8); // сразу под поверхностью

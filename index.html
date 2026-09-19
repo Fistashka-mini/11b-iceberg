@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>11-Б · Айсберг одноклассников</title>
-    <meta name="description" content="Айсберг одноклассников 11-Б, 2015 — 2028" />
+    <meta name="description" content="Айсберг одноклассников 11-Б, 2016 — 2027" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -32,7 +32,7 @@
     <header id="hero">
       <p class="hero-kicker" data-field="subtitle">Айсберг одноклассников</p>
       <h1 class="hero-title" data-field="title">11-Б</h1>
-      <p class="hero-years" data-field="years">2015 — 2028</p>
+      <p class="hero-years" data-field="years">2016 — 2027</p>
       <div class="hero-hint">
         <span>Листай вниз</span>
         <i></i>
@@ -47,6 +47,22 @@
       <span class="depth-label">глубина</span>
       <span id="depth-value">0 м</span>
     </aside>
+
+    <!-- архив (полные ФИО) — только для владельца по IP -->
+    <button id="archive-btn" type="button" hidden>Архив</button>
+
+    <section id="archive" hidden>
+      <div class="archive-backdrop" data-archive-close></div>
+      <article class="archive-card" role="dialog" aria-modal="true">
+        <button class="archive-close" data-archive-close aria-label="Закрыть">✕</button>
+        <header class="archive-head">
+          <p class="archive-kicker">Только для тебя · по IP</p>
+          <h2>Архив класса</h2>
+          <p class="archive-meta"><span id="archive-count">0</span> человек · полные ФИО</p>
+        </header>
+        <ol id="archive-list" class="archive-list"></ol>
+      </article>
+    </section>
 
     <!-- имя при наведении на одноклассника -->
     <div id="tooltip" hidden></div>
