@@ -552,13 +552,20 @@ body.modal-open {
   cursor: default;
 }
 
-/* ---------- архив (владелец) ---------- */
+/* ---------- тулбар ---------- */
 
-#archive-btn {
+#toolbar {
   position: fixed;
   left: 5vw;
   bottom: 5vh;
   z-index: 4;
+  display: flex;
+  gap: 10px;
+  pointer-events: none;
+}
+
+#toolbar button {
+  pointer-events: auto;
   padding: 10px 18px;
   border-radius: 999px;
   border: 1px solid var(--glass-border);
@@ -567,19 +574,30 @@ body.modal-open {
   font-family: var(--font-display);
   font-size: 12px;
   font-weight: 500;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   cursor: pointer;
   backdrop-filter: blur(10px);
   transition: background 0.2s, transform 0.2s;
 }
 
-#archive-btn:hover {
+#toolbar button:hover {
   background: rgba(255, 255, 255, 0.12);
   transform: translateY(-1px);
 }
 
-#archive {
+#add-btn {
+  letter-spacing: 0.06em;
+}
+
+#archive-btn {
+  /* inherits toolbar button */
+}
+
+/* ---------- архив (логи) ---------- */
+
+#archive,
+#add-modal {
   position: fixed;
   inset: 0;
   z-index: 55;
@@ -590,7 +608,8 @@ body.modal-open {
   justify-content: center;
 }
 
-#archive[hidden] {
+#archive[hidden],
+#add-modal[hidden] {
   display: none;
 }
 
@@ -612,6 +631,10 @@ body.modal-open {
   border: 1px solid var(--glass-border);
   box-shadow: 0 40px 120px rgba(0, 10, 30, 0.6);
   animation: rise 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.add-card {
+  width: min(520px, 100%);
 }
 
 .archive-close {
@@ -641,7 +664,7 @@ body.modal-open {
   margin: 0;
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: clamp(24px, 4vw, 36px);
+  font-size: clamp(22px, 3.5vw, 34px);
 }
 
 .archive-meta {
@@ -650,50 +673,192 @@ body.modal-open {
   font-size: 14px;
 }
 
-.archive-list {
-  margin: 28px 0 0;
-  padding: 0;
-  list-style: none;
-  counter-reset: archive;
+.log-list {
+  margin-top: 24px;
   display: grid;
+  gap: 12px;
+}
+
+.log-item {
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.log-item header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+}
+
+.log-action {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.log-item time {
+  font-size: 12px;
+  color: var(--ink-dim);
+}
+
+.log-summary {
+  margin: 8px 0 4px;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.log-by {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ink-dim);
+}
+
+.log-actions {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
-.archive-list li {
-  counter-increment: archive;
+.log-actions button {
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--glass-border);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.log-actions button:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.log-snap {
+  margin: 12px 0 0;
+  padding: 12px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.25);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.45;
+  overflow: auto;
+  max-height: 220px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.log-loading,
+.log-empty {
+  color: var(--ink-dim);
+  font-size: 14px;
+}
+
+/* ---------- редактирование ---------- */
+
+.profile-actions {
+  margin-top: 24px;
+}
+
+.btn-edit,
+.btn-save,
+.btn-cancel,
+.btn-clear {
+  padding: 10px 18px;
+  border-radius: 999px;
+  border: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.btn-edit:hover,
+.btn-save:hover {
+  background: rgba(143, 211, 255, 0.2);
+}
+
+.btn-save {
+  background: rgba(143, 211, 255, 0.22);
+  border-color: rgba(143, 211, 255, 0.35);
+}
+
+.btn-clear {
+  opacity: 0.75;
+}
+
+.profile-edit {
+  margin-top: 28px;
   display: grid;
-  grid-template-columns: 36px 1fr auto;
-  gap: 12px;
-  align-items: baseline;
+  gap: 16px;
+}
+
+.profile-edit[hidden] {
+  display: none !important;
+}
+
+.profile-edit label {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.profile-edit input,
+.profile-edit textarea,
+.profile-edit select {
+  width: 100%;
   padding: 12px 14px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  cursor: pointer;
-  transition: background 0.15s;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.22);
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+  text-transform: none;
+  letter-spacing: normal;
 }
 
-.archive-list li:hover {
-  background: rgba(255, 255, 255, 0.09);
+.profile-edit textarea {
+  resize: vertical;
+  min-height: 100px;
+  line-height: 1.5;
 }
 
-.archive-list li::before {
-  content: counter(archive, decimal-leading-zero);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  color: var(--accent);
-  opacity: 0.8;
-}
-
-.archive-list .archive-full {
-  font-size: 14px;
-  line-height: 1.35;
-}
-
-.archive-list .archive-short {
-  font-size: 12px;
+.char-count {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-align: right;
   color: var(--ink-dim);
-  white-space: nowrap;
+}
+
+.edit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.edit-status {
+  margin: 0;
+  font-size: 13px;
+}
+
+.edit-status.ok {
+  color: #9be7c4;
+}
+
+.edit-status.err {
+  color: #ffb4b4;
 }
 
 /* ---------- мобильные ---------- */
@@ -724,7 +889,7 @@ body.modal-open {
     bottom: 20px;
   }
 
-  #archive-btn {
+  #toolbar {
     left: 20px;
     bottom: 20px;
   }
@@ -733,13 +898,5 @@ body.modal-open {
     flex-direction: column;
     align-items: flex-start;
     padding-right: 0;
-  }
-
-  .archive-list li {
-    grid-template-columns: 28px 1fr;
-  }
-
-  .archive-list .archive-short {
-    grid-column: 2;
   }
 }

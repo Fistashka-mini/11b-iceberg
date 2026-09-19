@@ -141,6 +141,25 @@ export class IcebergScene {
     return sprite;
   }
 
+  removeClassmate(personId) {
+    const idx = this.markers.findIndex((m) => m.userData.person?.id === personId);
+    if (idx < 0) return;
+    const sprite = this.markers[idx];
+    this.icebergGroup.remove(sprite);
+    sprite.material.map?.dispose();
+    sprite.material.dispose();
+    this.markers.splice(idx, 1);
+    if (this.hovered === sprite) {
+      this.hovered = null;
+      this.canvas.style.cursor = '';
+    }
+  }
+
+  async replaceClassmate(person, tier) {
+    this.removeClassmate(person.id);
+    return this.addClassmate(person, tier);
+  }
+
   // ---------- ввод ----------
 
   setScroll(fraction) {

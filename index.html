@@ -13,22 +13,15 @@
     />
   </head>
   <body>
-    <!-- экран загрузки -->
     <div id="loader">
       <div class="loader-ice"></div>
       <span>Замораживаем айсберг…</span>
     </div>
 
-    <!-- 3D-сцена -->
     <canvas id="scene"></canvas>
-
-    <!-- невидимый высокий блок, который даёт странице прокрутку -->
     <div id="scroller"></div>
-
-    <!-- виньетка поверх сцены -->
     <div id="vignette"></div>
 
-    <!-- заголовок -->
     <header id="hero">
       <p class="hero-kicker" data-field="subtitle">Айсберг одноклассников</p>
       <h1 class="hero-title" data-field="title">11-Б</h1>
@@ -39,35 +32,35 @@
       </div>
     </header>
 
-    <!-- подписи уровней айсберга -->
     <div id="tiers"></div>
 
-    <!-- глубиномер -->
     <aside id="depth">
       <span class="depth-label">глубина</span>
       <span id="depth-value">0 м</span>
     </aside>
 
-    <!-- архив (полные ФИО) — только для владельца по IP -->
-    <button id="archive-btn" type="button" hidden>Архив</button>
+    <div id="toolbar">
+      <button id="add-btn" type="button">+ Добавить</button>
+      <button id="archive-btn" type="button" hidden>Архив</button>
+    </div>
 
+    <!-- архив = лог изменений (только владелец по IP) -->
     <section id="archive" hidden>
       <div class="archive-backdrop" data-archive-close></div>
       <article class="archive-card" role="dialog" aria-modal="true">
         <button class="archive-close" data-archive-close aria-label="Закрыть">✕</button>
         <header class="archive-head">
           <p class="archive-kicker">Только для тебя · по IP</p>
-          <h2>Архив класса</h2>
-          <p class="archive-meta"><span id="archive-count">0</span> человек · полные ФИО</p>
+          <h2>Архив изменений</h2>
+          <p class="archive-meta">Лог правок — можно восстановить удалённый текст</p>
         </header>
-        <ol id="archive-list" class="archive-list"></ol>
+        <div id="archive-list" class="log-list"></div>
       </article>
     </section>
 
-    <!-- имя при наведении на одноклассника -->
     <div id="tooltip" hidden></div>
 
-    <!-- страница одноклассника -->
+    <!-- карточка одноклассника -->
     <section id="profile" hidden>
       <div class="profile-backdrop" data-close></div>
       <article class="profile-card" role="dialog" aria-modal="true">
@@ -82,14 +75,92 @@
           </div>
         </header>
 
-        <div class="profile-about"></div>
-        <ul class="profile-facts"></ul>
-        <div class="profile-gallery"></div>
+        <div class="profile-view">
+          <div class="profile-about"></div>
+          <ul class="profile-facts"></ul>
+          <div class="profile-gallery"></div>
+          <div class="profile-actions">
+            <button type="button" class="btn-edit">Редактировать</button>
+          </div>
+        </div>
+
+        <form class="profile-edit" hidden>
+          <label>
+            Имя
+            <input name="name" maxlength="40" required />
+          </label>
+          <label>
+            Подпись
+            <input name="nickname" maxlength="80" placeholder="необязательно" />
+          </label>
+          <label>
+            Раздел (глубина)
+            <select name="tier"></select>
+          </label>
+          <label>
+            Описание
+            <textarea name="about" rows="5" maxlength="450" placeholder="Истории, мемы, легенды…"></textarea>
+            <span class="char-count"><b data-count="about">0</b>/450</span>
+          </label>
+          <label>
+            Факты (каждый с новой строки)
+            <textarea name="facts" rows="3" placeholder="Один факт — одна строка"></textarea>
+          </label>
+          <label>
+            Твоё имя в логе
+            <input name="editor" maxlength="40" placeholder="кто правит (для архива)" />
+          </label>
+          <div class="edit-actions">
+            <button type="button" class="btn-cancel">Отмена</button>
+            <button type="button" class="btn-clear">Очистить описание</button>
+            <button type="submit" class="btn-save">Сохранить</button>
+          </div>
+          <p class="edit-status" hidden></p>
+        </form>
 
         <footer class="profile-nav">
           <button class="profile-prev"><span>←</span><b></b></button>
           <button class="profile-next"><b></b><span>→</span></button>
         </footer>
+      </article>
+    </section>
+
+    <!-- добавить нового -->
+    <section id="add-modal" hidden>
+      <div class="archive-backdrop" data-add-close></div>
+      <article class="archive-card add-card" role="dialog" aria-modal="true">
+        <button class="archive-close" data-add-close aria-label="Закрыть">✕</button>
+        <header class="archive-head">
+          <p class="archive-kicker">Новый одноклассник</p>
+          <h2>Добавить на айсберг</h2>
+        </header>
+        <form id="add-form" class="profile-edit" style="display: grid">
+          <label>
+            Имя
+            <input name="name" maxlength="40" required placeholder="как на айсберге" />
+          </label>
+          <label>
+            Раздел (глубина)
+            <select name="tier"></select>
+          </label>
+          <label>
+            Подпись
+            <input name="nickname" maxlength="80" placeholder="необязательно" />
+          </label>
+          <label>
+            Описание
+            <textarea name="about" rows="4" maxlength="450"></textarea>
+          </label>
+          <label>
+            Твоё имя в логе
+            <input name="editor" maxlength="40" placeholder="кто добавляет" />
+          </label>
+          <div class="edit-actions">
+            <button type="button" data-add-close class="btn-cancel">Отмена</button>
+            <button type="submit" class="btn-save">Добавить</button>
+          </div>
+          <p class="edit-status" hidden></p>
+        </form>
       </article>
     </section>
 
