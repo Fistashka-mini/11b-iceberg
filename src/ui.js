@@ -1,5 +1,5 @@
 import { drawAvatar } from './avatar.js';
-import { ABOUT_MAX } from './data/config.js';
+import { ABOUT_MAX, ARTICLE_MAX } from './data/config.js';
 import {
   getEditorName,
   setEditorName,
@@ -10,6 +10,7 @@ import {
   newPersonId,
 } from './store.js';
 import { compressAvatarFile, uploadAvatar, resolvePhotoSrc, clearPhotoCache } from './photo.js';
+import { listArticles, saveArticle, newArticleId } from './articles.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 
@@ -42,7 +43,9 @@ const ACTION_LABEL = {
   remove: 'Удалён',
 };
 
-export function createUI({ classInfo, tiers, classmates, onPersonSaved, onPersonAdded }) {
+export function createUI({ classInfo, tiers, classmates, onPersonSaved, onPersonAdded, roles = {} }) {
+  const isMod = !!roles.isMod;
+  const isOwner = !!roles.isOwner;
   const hero = $('#hero');
   for (const [field, value] of Object.entries(classInfo)) {
     const el = hero.querySelector(`[data-field="${field}"]`);
@@ -113,6 +116,11 @@ export function createUI({ classInfo, tiers, classmates, onPersonSaved, onPerson
   let removePhoto = false;
 
   fillTierSelect($('select[name="tier"]', editForm));
+
+  // глубина — только модеры
+  document.querySelectorAll('.mod-only').forEach((el) => {
+    el.hidden = !isMod;
+  });
 
   function setStatus(el, msg, ok = false) {
     if (!el) return;
@@ -236,7 +244,9 @@ export function createUI({ classInfo, tiers, classmates, onPersonSaved, onPerson
     profile.hidden = true;
     current = null;
     editing = false;
-    if ($('#archive').hidden && $('#add-modal').hidden) document.body.classList.remove('modal-open');
+    if ($('#archive').hidden && $('#add-modal').hidden && $('#articles').hidden) {
+      document.body.classList.remove('modal-open');
+    }
     if (location.hash) history.pushState(null, '', location.pathname + location.search);
   }
 
@@ -274,7 +284,7 @@ export function createUI({ classInfo, tiers, classmates, onPersonSaved, onPerson
       ...current,
       name: editForm.name.value.trim() || current.name,
       nickname: editForm.nickname.value.trim(),
-      tier: Number(editForm.tier.value) || 0,
+      tier: isMod ? Number(editForm.tier.value) || 0 : current.tier,
       about: editForm.about.value.slice(0, ABOUT_MAX),
       facts: editForm.facts.value
         .split('\n')
@@ -363,6 +373,7 @@ export function createUI({ classInfo, tiers, classmates, onPersonSaved, onPerson
   function openAdd() {
     closeProfile();
     closeArchive();
+    closeArticles();
     addForm.reset();
     addPendingPhoto = null;
     addForm.editor.value = getEditorName();
@@ -376,7 +387,7 @@ export function createUI({ classInfo, tiers, classmates, onPersonSaved, onPerson
   function closeAdd() {
     if (addModal.hidden) return;
     addModal.hidden = true;
-    if (profile.hidden && $('#archive').hidden) document.body.classList.remove('modal-open');
+    if (profile.hidden && archive.hidden && articlesPanel.hidden) document.body.classList.remove('modal-open');
   }
 
   addBtn.addEventListener('click', openAdd);
@@ -391,8 +402,8 @@ export function createUI({ classInfo, tiers, classmates, onPersonSaved, onPerson
     const person = {
       id: newPersonId(name),
       name,
-      nickname: addForm.nickname.value.trim(),
-      tier: Number(addForm.tier.value) || 0,
+      nickname: addForm.nickname?.value.trim() || '',
+      tier: isMod ? Number(addForm.tier.value) || 0 : 0,
       angle: Math.round((Math.random() * 120 - 60) * 10) / 10,
       offset: Math.round((Math.random() * 1.4 - 0.7) * 10) / 10,
       about: addForm.about.value.slice(0, ABOUT_MAX),
@@ -428,14 +439,201 @@ export function createUI({ classInfo, tiers, classmates, onPersonSaved, onPerson
     }
   });
 
+  // ---------- articles ----------
+  const articlesBtn = $('#articles-btn');
+  const articlesPanel = $('#articles');
+  const articlesList = $('#articles-list');
+  const articleReader = $('#article-reader');
+  const articleForm = $('#article-form');
+  const articleWriteBtn = $('#article-write-btn');
+  const articleStatus = $('.edit-status', articleForm);
+  /** @type {{ raw: string, mime: string, dataUrl: string } | null} */
+  let articlePendingPhoto = null;
+
+  if (isMod) articleWriteBtn.hidden = false;
+
+  function fillArticlePersonSelect() {
+    const sel = articleForm.personId;
+    sel.innerHTML = classmates
+      .map((p) => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`)
+      .join('');
+  }
+
+  wirePhotoInput(articleForm, {
+    onPicked: (packed) => {
+      articlePendingPhoto = packed;
+    },
+  });
+  articleForm.querySelector('[data-art-photo-clear]')?.addEventListener('click', () => {
+    articlePendingPhoto = null;
+    articleForm.photo.value = '';
+    showPhotoPreview(articleForm, '');
+  });
+  articleForm.body?.addEventListener('input', () => {
+    const el = $('[data-count="abody"]', articleForm);
+    if (el) el.textContent = String(articleForm.body.value.length);
+  });
+
+  async function renderArticlesList() {
+    articlesList.hidden = false;
+    articleReader.hidden = true;
+    articleForm.hidden = true;
+    articlesList.innerHTML = '<p class="log-loading">Загружаю статьи…</p>';
+    try {
+      const items = await listArticles();
+      if (!items.length) {
+        articlesList.innerHTML = '<p class="log-empty">Пока нет статей. Модераторы могут написать первую.</p>';
+        return;
+      }
+      articlesList.innerHTML = items
+        .map(
+          (a) => `
+        <button type="button" class="article-card" data-open-article="${escapeHtml(a.id)}">
+          <span class="article-card-title">${escapeHtml(a.title)}</span>
+          <span class="article-card-meta">про ${escapeHtml(a.personName)} · ${escapeHtml(a.by)} · ${escapeHtml(formatWhen(a.at))}</span>
+        </button>`,
+        )
+        .join('');
+      articlesList._cache = items;
+    } catch (err) {
+      articlesList.innerHTML = `<p class="log-empty">${escapeHtml(err.message || 'Ошибка загрузки')}</p>`;
+    }
+  }
+
+  async function openArticleReader(article) {
+    articlesList.hidden = true;
+    articleForm.hidden = true;
+    articleReader.hidden = false;
+    let photoHtml = '';
+    if (article.photo) {
+      const src = await resolvePhotoSrc(article.photo);
+      if (src) photoHtml = `<img class="article-photo" src="${escapeHtml(src)}" alt="" />`;
+    }
+    articleReader.innerHTML = `
+      <button type="button" class="btn-cancel" data-back-articles>← К списку</button>
+      <p class="article-kicker">про ${escapeHtml(article.personName)}</p>
+      <h3>${escapeHtml(article.title)}</h3>
+      <p class="article-meta">${escapeHtml(article.by)} · ${escapeHtml(formatWhen(article.at))}</p>
+      ${photoHtml}
+      <div class="article-body">${escapeHtml(article.body)
+        .split(/\n\s*\n/)
+        .filter((p) => p.trim())
+        .map((p) => `<p>${p.trim().replace(/\n/g, '<br>')}</p>`)
+        .join('')}</div>`;
+  }
+
+  function openArticleForm() {
+    if (!isMod) return;
+    articlesList.hidden = true;
+    articleReader.hidden = true;
+    articleForm.hidden = false;
+    articleForm.reset();
+    articlePendingPhoto = null;
+    fillArticlePersonSelect();
+    articleForm.editor.value = getEditorName();
+    showPhotoPreview(articleForm, '');
+    $('[data-count="abody"]', articleForm).textContent = '0';
+    setStatus(articleStatus, '');
+  }
+
+  function openArticles() {
+    closeProfile();
+    closeAdd();
+    closeArchive();
+    articlesPanel.hidden = false;
+    document.body.classList.add('modal-open');
+    renderArticlesList();
+  }
+
+  function closeArticles() {
+    if (articlesPanel.hidden) return;
+    articlesPanel.hidden = true;
+    if (profile.hidden && addModal.hidden && archive.hidden) document.body.classList.remove('modal-open');
+  }
+
+  articlesBtn.addEventListener('click', openArticles);
+  articlesPanel.querySelectorAll('[data-articles-close]').forEach((el) =>
+    el.addEventListener('click', closeArticles),
+  );
+  articleWriteBtn.addEventListener('click', openArticleForm);
+  articleForm.querySelector('[data-art-cancel]')?.addEventListener('click', () => renderArticlesList());
+
+  articlesList.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-open-article]');
+    if (!btn) return;
+    const id = btn.getAttribute('data-open-article');
+    const article = (articlesList._cache || []).find((a) => a.id === id);
+    if (article) openArticleReader(article);
+  });
+
+  articleReader.addEventListener('click', (e) => {
+    if (e.target.closest('[data-back-articles]')) renderArticlesList();
+  });
+
+  articleForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!isMod) {
+      setStatus(articleStatus, 'Писать статьи могут только модераторы');
+      return;
+    }
+    const person = classmates.find((c) => c.id === articleForm.personId.value);
+    if (!person) {
+      setStatus(articleStatus, 'Выбери человека с айсберга');
+      return;
+    }
+    setEditorName(articleForm.editor.value.trim());
+    const id = newArticleId();
+    const row = {
+      id,
+      personId: person.id,
+      personName: person.name,
+      title: articleForm.title.value.trim(),
+      body: articleForm.body.value.slice(0, ARTICLE_MAX),
+      photo: '',
+      by: getEditorName() || 'модер',
+      at: new Date().toISOString(),
+    };
+    if (!row.title || !row.body) {
+      setStatus(articleStatus, 'Нужны заголовок и текст');
+      return;
+    }
+    setStatus(articleStatus, 'Публикую…');
+    try {
+      if (articlePendingPhoto) {
+        setStatus(articleStatus, 'Загружаю фото…');
+        row.photo = await uploadAvatar(`art_${id}`, articlePendingPhoto, (done, total) => {
+          setStatus(articleStatus, `Загружаю фото… ${done}/${total}`);
+        });
+      }
+      await saveArticle(row);
+      // also log in archive
+      try {
+        await savePersonChange({
+          before: person,
+          after: person,
+          action: 'update',
+          summary: `Статья «${row.title}» про «${person.name}»`,
+        });
+      } catch {
+        /* лог необязателен */
+      }
+      articlePendingPhoto = null;
+      setStatus(articleStatus, 'Опубликовано', true);
+      await renderArticlesList();
+    } catch (err) {
+      setStatus(articleStatus, err.message || 'Ошибка');
+    }
+  });
+
   // ---------- archive (logs) ----------
   const archiveBtn = $('#archive-btn');
   const archive = $('#archive');
   const archiveList = $('#archive-list');
 
-  async function openArchive() {
+  async   function openArchive() {
     closeProfile();
     closeAdd();
+    closeArticles();
     archive.hidden = false;
     document.body.classList.add('modal-open');
     archiveList.innerHTML = '<p class="log-loading">Загружаю лог…</p>';
@@ -472,7 +670,7 @@ export function createUI({ classInfo, tiers, classmates, onPersonSaved, onPerson
   function closeArchive() {
     if (archive.hidden) return;
     archive.hidden = true;
-    if (profile.hidden && addModal.hidden) document.body.classList.remove('modal-open');
+    if (profile.hidden && addModal.hidden && articlesPanel.hidden) document.body.classList.remove('modal-open');
   }
 
   archive.querySelectorAll('[data-archive-close]').forEach((el) => el.addEventListener('click', closeArchive));
@@ -539,7 +737,7 @@ export function createUI({ classInfo, tiers, classmates, onPersonSaved, onPerson
     } else if (!profile.hidden && !editing) {
       profile.hidden = true;
       current = null;
-      if (archive.hidden && addModal.hidden) document.body.classList.remove('modal-open');
+      if (archive.hidden && addModal.hidden && articlesPanel.hidden) document.body.classList.remove('modal-open');
     }
   }
   window.addEventListener('popstate', syncWithHash);
@@ -547,6 +745,7 @@ export function createUI({ classInfo, tiers, classmates, onPersonSaved, onPerson
 
   window.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
+    if (!articlesPanel.hidden) return closeArticles();
     if (!archive.hidden) return closeArchive();
     if (!addModal.hidden) return closeAdd();
     if (!profile.hidden) closeProfile();

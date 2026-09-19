@@ -40,9 +40,60 @@
     </aside>
 
     <div id="toolbar">
+      <button id="articles-btn" type="button">Статьи</button>
       <button id="add-btn" type="button">+ Добавить</button>
       <button id="archive-btn" type="button" hidden>Архив</button>
     </div>
+
+    <!-- статьи: читают все, пишут только модеры -->
+    <section id="articles" hidden>
+      <div class="archive-backdrop" data-articles-close></div>
+      <article class="archive-card articles-card" role="dialog" aria-modal="true">
+        <button class="archive-close" data-articles-close aria-label="Закрыть">✕</button>
+        <header class="archive-head">
+          <p class="archive-kicker">Истории класса</p>
+          <h2>Статьи</h2>
+          <p class="archive-meta">Про людей с айсберга · фото + текст</p>
+        </header>
+        <div class="articles-toolbar">
+          <button type="button" id="article-write-btn" class="btn-save" hidden>Написать статью</button>
+        </div>
+        <div id="articles-list" class="articles-list"></div>
+        <div id="article-reader" class="article-reader" hidden></div>
+        <form id="article-form" class="profile-edit article-form" hidden>
+          <label>
+            О ком статья
+            <select name="personId" required></select>
+          </label>
+          <label>
+            Заголовок
+            <input name="title" maxlength="80" required placeholder="Короткий заголовок" />
+          </label>
+          <label>
+            Текст
+            <textarea name="body" rows="6" maxlength="450" required placeholder="Текст статьи…"></textarea>
+            <span class="char-count"><b data-count="abody">0</b>/450</span>
+          </label>
+          <label class="photo-field">
+            Фото (макс. 1)
+            <div class="photo-row">
+              <img class="photo-preview" alt="" hidden />
+              <input type="file" name="photo" accept="image/*" />
+              <button type="button" class="btn-photo-clear" data-art-photo-clear>Убрать</button>
+            </div>
+          </label>
+          <label>
+            Твоё имя
+            <input name="editor" maxlength="40" placeholder="кто пишет" />
+          </label>
+          <div class="edit-actions">
+            <button type="button" class="btn-cancel" data-art-cancel>Отмена</button>
+            <button type="submit" class="btn-save">Опубликовать</button>
+          </div>
+          <p class="edit-status" hidden></p>
+        </form>
+      </article>
+    </section>
 
     <!-- архив = лог изменений (только владелец по IP) -->
     <section id="archive" hidden>
@@ -93,9 +144,10 @@
             Подпись
             <input name="nickname" maxlength="80" placeholder="необязательно" />
           </label>
-          <label>
+          <label class="mod-only">
             Раздел (глубина)
             <select name="tier"></select>
+            <span class="photo-hint">Глубину меняют только модераторы</span>
           </label>
           <label class="photo-field">
             Фото на аватаре
@@ -148,7 +200,7 @@
             Имя
             <input name="name" maxlength="40" required placeholder="как на айсберге" />
           </label>
-          <label>
+          <label class="mod-only">
             Раздел (глубина)
             <select name="tier"></select>
           </label>

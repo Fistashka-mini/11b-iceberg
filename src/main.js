@@ -1,7 +1,7 @@
 import './style.css';
 import { IcebergScene } from './scene.js';
 import { createUI } from './ui.js';
-import { checkOwnerAccess } from './owner.js';
+import { checkRoles } from './owner.js';
 import { hydrateClassmates } from './store.js';
 import { CLASS_INFO, TIERS, CLASSMATES as SEED } from './data/classmates.js';
 
@@ -73,6 +73,8 @@ function loop() {
 
 async function start() {
   loaderText.textContent = 'Подгружаем правки класса…';
+  const roles = await checkRoles();
+
   try {
     classmates = await hydrateClassmates(SEED);
   } catch (err) {
@@ -84,6 +86,7 @@ async function start() {
     classInfo: CLASS_INFO,
     tiers,
     classmates,
+    roles,
     onPersonSaved: async (person) => {
       await replaceOne(person);
     },
@@ -93,8 +96,7 @@ async function start() {
   });
   scene.onHover = (person, pos) => ui.showTooltip(person, pos);
 
-  const owner = await checkOwnerAccess();
-  if (owner.isOwner) ui.enableArchive();
+  if (roles.isOwner) ui.enableArchive();
 
   await Promise.all([
     Promise.all(classmates.map((p) => placeOne(p))),

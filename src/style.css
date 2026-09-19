@@ -552,6 +552,100 @@ body.modal-open {
   cursor: default;
 }
 
+.mod-only[hidden] {
+  display: none !important;
+}
+
+.articles-card {
+  width: min(720px, 100%);
+}
+
+.articles-toolbar {
+  margin: 18px 0 8px;
+}
+
+.articles-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.article-card {
+  display: grid;
+  gap: 4px;
+  text-align: left;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.article-card:hover {
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.article-card-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.article-card-meta {
+  font-size: 12px;
+  color: var(--ink-dim);
+}
+
+.article-reader {
+  margin-top: 12px;
+}
+
+.article-reader h3 {
+  margin: 8px 0 0;
+  font-family: var(--font-display);
+  font-size: clamp(22px, 3vw, 32px);
+}
+
+.article-kicker {
+  margin: 16px 0 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.article-meta {
+  margin: 6px 0 18px;
+  font-size: 13px;
+  color: var(--ink-dim);
+}
+
+.article-photo {
+  display: block;
+  width: 100%;
+  max-height: 360px;
+  object-fit: cover;
+  border-radius: 16px;
+  margin-bottom: 18px;
+}
+
+.article-body {
+  font-size: 16px;
+  line-height: 1.65;
+}
+
+.article-body p {
+  margin: 0 0 12px;
+}
+
+.article-form {
+  margin-top: 16px;
+}
+
 /* ---------- тулбар ---------- */
 
 #toolbar {
