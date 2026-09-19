@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>11-Б · Айсберг одноклассников</title>
+    <meta name="description" content="Айсберг одноклассников 11-Б, 2015 — 2028" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;500;700;900&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <!-- экран загрузки -->
+    <div id="loader">
+      <div class="loader-ice"></div>
+      <span>Замораживаем айсберг…</span>
+    </div>
+
+    <!-- 3D-сцена -->
+    <canvas id="scene"></canvas>
+
+    <!-- невидимый высокий блок, который даёт странице прокрутку -->
+    <div id="scroller"></div>
+
+    <!-- виньетка поверх сцены -->
+    <div id="vignette"></div>
+
+    <!-- заголовок -->
+    <header id="hero">
+      <p class="hero-kicker" data-field="subtitle">Айсберг одноклассников</p>
+      <h1 class="hero-title" data-field="title">11-Б</h1>
+      <p class="hero-years" data-field="years">2015 — 2028</p>
+      <div class="hero-hint">
+        <span>Листай вниз</span>
+        <i></i>
+      </div>
+    </header>
+
+    <!-- подписи уровней айсберга -->
+    <div id="tiers"></div>
+
+    <!-- глубиномер -->
+    <aside id="depth">
+      <span class="depth-label">глубина</span>
+      <span id="depth-value">0 м</span>
+    </aside>
+
+    <!-- имя при наведении на одноклассника -->
+    <div id="tooltip" hidden></div>
+
+    <!-- страница одноклассника -->
+    <section id="profile" hidden>
+      <div class="profile-backdrop" data-close></div>
+      <article class="profile-card" role="dialog" aria-modal="true">
+        <button class="profile-close" data-close aria-label="Закрыть">✕</button>
+
+        <header class="profile-head">
+          <div class="profile-avatar"><img alt="" /></div>
+          <div class="profile-titles">
+            <p class="profile-tier"></p>
+            <h2 class="profile-name"></h2>
+            <p class="profile-nick"></p>
+          </div>
+        </header>
+
+        <div class="profile-about"></div>
+        <ul class="profile-facts"></ul>
+        <div class="profile-gallery"></div>
+
+        <footer class="profile-nav">
+          <button class="profile-prev"><span>←</span><b></b></button>
+          <button class="profile-next"><b></b><span>→</span></button>
+        </footer>
+      </article>
+    </section>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
