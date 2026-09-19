@@ -84,9 +84,13 @@ export async function drawAvatar(person, size = 256) {
   canvas.width = canvas.height = size;
   const ctx = canvas.getContext('2d');
   let src = person.photo || '';
-  if (src.startsWith('kv://')) {
-    const { resolvePhotoSrc } = await import('./photo.js');
-    src = await resolvePhotoSrc(src);
+  try {
+    if (src.startsWith('kv://')) {
+      const { resolvePhotoSrc } = await import('./photo.js');
+      src = await resolvePhotoSrc(src);
+    }
+  } catch {
+    src = '';
   }
   const img = await loadImage(src);
   paint(ctx, size, person, img);

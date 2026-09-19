@@ -276,7 +276,10 @@ export function createUI({ classInfo, tiers, classmates, onPersonSaved, onPerson
 
   editForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    if (!current) return;
+    if (!current || editForm.dataset.busy === '1') return;
+    editForm.dataset.busy = '1';
+    const saveBtn = editForm.querySelector('.btn-save');
+    if (saveBtn) saveBtn.disabled = true;
     const before = { ...current, facts: [...(current.facts || [])] };
     setEditorName(editForm.editor.value.trim());
 
@@ -289,7 +292,8 @@ export function createUI({ classInfo, tiers, classmates, onPersonSaved, onPerson
       facts: editForm.facts.value
         .split('\n')
         .map((s) => s.trim())
-        .filter(Boolean),
+        .filter(Boolean)
+        .slice(0, 3),
     };
 
     setStatus(editStatus, 'Сохраняю…');
@@ -318,6 +322,9 @@ export function createUI({ classInfo, tiers, classmates, onPersonSaved, onPerson
       await renderProfile(current);
     } catch (err) {
       setStatus(editStatus, err.message || 'Ошибка сохранения');
+    } finally {
+      editForm.dataset.busy = '0';
+      if (saveBtn) saveBtn.disabled = false;
     }
   });
 
@@ -606,9 +613,15 @@ export function createUI({ classInfo, tiers, classmates, onPersonSaved, onPerson
       setStatus(articleStatus, 'Писать статьи могут только модераторы');
       return;
     }
+    if (articleForm.dataset.busy === '1') return;
+    articleForm.dataset.busy = '1';
+    const pubBtn = articleForm.querySelector('.btn-save');
+    if (pubBtn) pubBtn.disabled = true;
     const person = classmates.find((c) => c.id === articleForm.personId.value);
     if (!person) {
       setStatus(articleStatus, 'Выбери человека с айсберга');
+      articleForm.dataset.busy = '0';
+      if (pubBtn) pubBtn.disabled = false;
       return;
     }
     setEditorName(articleForm.editor.value.trim());
@@ -625,6 +638,8 @@ export function createUI({ classInfo, tiers, classmates, onPersonSaved, onPerson
     };
     if (!row.title || !row.body) {
       setStatus(articleStatus, 'Нужны заголовок и текст');
+      articleForm.dataset.busy = '0';
+      if (pubBtn) pubBtn.disabled = false;
       return;
     }
     setStatus(articleStatus, 'Публикую…');
@@ -636,7 +651,6 @@ export function createUI({ classInfo, tiers, classmates, onPersonSaved, onPerson
         });
       }
       await saveArticle(row);
-      // also log in archive
       try {
         await savePersonChange({
           before: person,
@@ -652,6 +666,9 @@ export function createUI({ classInfo, tiers, classmates, onPersonSaved, onPerson
       await renderArticlesList();
     } catch (err) {
       setStatus(articleStatus, err.message || 'Ошибка');
+    } finally {
+      articleForm.dataset.busy = '0';
+      if (pubBtn) pubBtn.disabled = false;
     }
   });
 
@@ -756,7 +773,12 @@ export function createUI({ classInfo, tiers, classmates, onPersonSaved, onPerson
 
   // ---------- hash / keys ----------
   function syncWithHash() {
-    const id = location.hash.startsWith('#/') ? decodeURIComponent(location.hash.slice(2)) : '';
+    let id = '';
+    try {
+      id = location.hash.startsWith('#/') ? decodeURIComponent(location.hash.slice(2)) : '';
+    } catch {
+      id = '';
+    }
     const person = classmates.find((c) => c.id === id);
     if (person) {
       if (current !== person || profile.hidden) {

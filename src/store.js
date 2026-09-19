@@ -19,20 +19,24 @@ function fromB64Url(str) {
 }
 
 async function kvGet(key) {
-  const res = await fetch(`${KV_BASE}/GetValue/${KV_APP_KEY}/${encodeURIComponent(key)}`, {
-    cache: 'no-store',
-  });
-  if (!res.ok) return null;
-  const text = (await res.text()).replace(/^"|"$/g, '');
-  if (!text || text === 'null') return null;
   try {
-    return JSON.parse(fromB64Url(text));
-  } catch {
+    const res = await fetch(`${KV_BASE}/GetValue/${KV_APP_KEY}/${encodeURIComponent(key)}`, {
+      cache: 'no-store',
+    });
+    if (!res.ok) return null;
+    const text = (await res.text()).replace(/^"|"$/g, '');
+    if (!text || text === 'null') return null;
     try {
-      return JSON.parse(text);
+      return JSON.parse(fromB64Url(text));
     } catch {
-      return null;
+      try {
+        return JSON.parse(text);
+      } catch {
+        return null;
+      }
     }
+  } catch {
+    return null;
   }
 }
 
@@ -63,7 +67,11 @@ function clampPerson(p) {
     about: String(p.about ?? '').slice(0, ABOUT_MAX),
     facts,
     photo: String(p.photo ?? '').slice(0, 160),
-    gallery: Array.isArray(p.gallery) ? p.gallery.slice(0, 6) : [],
+    gallery: Array.isArray(p.gallery)
+      ? p.gallery
+          .filter((src) => typeof src === 'string' && /^(https?:|photos\/|data:image\/)/i.test(src))
+          .slice(0, 6)
+      : [],
     custom: !!p.custom,
     fullName: p.fullName ? String(p.fullName).slice(0, 120) : undefined,
     removed: !!p.removed,
@@ -117,8 +125,8 @@ async function writeMeta(meta) {
   // keep logIds short — only last 80 ids in meta
   const trimmed = {
     ...meta,
-    logIds: (meta.logIds || []).slice(-80),
-    customIds: (meta.customIds || []).slice(-100),
+    logIds: (meta.logIds || []).slice(-40),
+    customIds: (meta.customIds || []).slice(-40),
   };
   await kvSet('meta', trimmed);
 }

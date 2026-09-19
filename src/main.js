@@ -99,7 +99,15 @@ async function start() {
   if (roles.isOwner) ui.enableArchive();
 
   await Promise.all([
-    Promise.all(classmates.map((p) => placeOne(p))),
+    Promise.all(
+      classmates.map(async (p) => {
+        try {
+          await placeOne(p);
+        } catch (err) {
+          console.warn('marker failed', p.id, err);
+        }
+      }),
+    ),
     document.fonts?.ready ?? Promise.resolve(),
   ]);
 
@@ -109,4 +117,7 @@ async function start() {
   requestAnimationFrame(() => loader.classList.add('done'));
 }
 
-start();
+start().catch((err) => {
+  console.error(err);
+  loaderText.textContent = 'Не удалось загрузить. Обнови страницу.';
+});

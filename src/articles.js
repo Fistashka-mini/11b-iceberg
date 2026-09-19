@@ -22,20 +22,24 @@ function fromB64Url(str) {
 }
 
 async function kvGet(key) {
-  const res = await fetch(`${KV_BASE}/GetValue/${KV_APP_KEY}/${encodeURIComponent(key)}`, {
-    cache: 'no-store',
-  });
-  if (!res.ok) return null;
-  const text = (await res.text()).replace(/^"|"$/g, '');
-  if (!text || text === 'null') return null;
   try {
-    return JSON.parse(fromB64Url(text));
-  } catch {
+    const res = await fetch(`${KV_BASE}/GetValue/${KV_APP_KEY}/${encodeURIComponent(key)}`, {
+      cache: 'no-store',
+    });
+    if (!res.ok) return null;
+    const text = (await res.text()).replace(/^"|"$/g, '');
+    if (!text || text === 'null') return null;
     try {
-      return JSON.parse(text);
+      return JSON.parse(fromB64Url(text));
     } catch {
-      return null;
+      try {
+        return JSON.parse(text);
+      } catch {
+        return null;
+      }
     }
+  } catch {
+    return null;
   }
 }
 
@@ -88,7 +92,7 @@ export async function saveArticle(article) {
   });
   await kvSet(`a_${id}`, row);
   if (!meta.ids.includes(id)) meta.ids.push(id);
-  meta.ids = meta.ids.slice(-120);
+  meta.ids = meta.ids.slice(-40);
   await kvSet('ameta', meta);
   return row;
 }

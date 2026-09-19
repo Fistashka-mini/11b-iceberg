@@ -22,20 +22,24 @@ function fromB64Url(str) {
 }
 
 async function kvGet(key) {
-  const res = await fetch(`${KV_BASE}/GetValue/${KV_APP_KEY}/${encodeURIComponent(key)}`, {
-    cache: 'no-store',
-  });
-  if (!res.ok) return null;
-  const text = (await res.text()).replace(/^"|"$/g, '');
-  if (!text || text === 'null') return null;
   try {
-    return JSON.parse(fromB64Url(text));
-  } catch {
+    const res = await fetch(`${KV_BASE}/GetValue/${KV_APP_KEY}/${encodeURIComponent(key)}`, {
+      cache: 'no-store',
+    });
+    if (!res.ok) return null;
+    const text = (await res.text()).replace(/^"|"$/g, '');
+    if (!text || text === 'null') return null;
     try {
-      return JSON.parse(text);
+      return JSON.parse(fromB64Url(text));
     } catch {
-      return null;
+      try {
+        return JSON.parse(text);
+      } catch {
+        return null;
+      }
     }
+  } catch {
+    return null;
   }
 }
 
@@ -136,17 +140,21 @@ export async function resolvePhotoSrc(photo) {
   if (cache.has(id)) return cache.get(id);
 
   const meta = await kvGet(`ph_${id}_m`);
-  if (!meta?.n) return '';
+  if (!meta?.n || meta.n > 60) return '';
 
-  const parts = [];
-  for (let i = 0; i < meta.n; i++) {
-    const part = await kvGet(`ph_${id}_${i}`);
-    if (typeof part !== 'string') return '';
-    parts.push(part);
+  try {
+    const parts = [];
+    for (let i = 0; i < meta.n; i++) {
+      const part = await kvGet(`ph_${id}_${i}`);
+      if (typeof part !== 'string') return '';
+      parts.push(part);
+    }
+    const dataUrl = `data:${meta.mime || 'image/jpeg'};base64,${parts.join('')}`;
+    cache.set(id, dataUrl);
+    return dataUrl;
+  } catch {
+    return '';
   }
-  const dataUrl = `data:${meta.mime || 'image/jpeg'};base64,${parts.join('')}`;
-  cache.set(id, dataUrl);
-  return dataUrl;
 }
 
 export function clearPhotoCache(personId) {

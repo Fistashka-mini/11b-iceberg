@@ -15,9 +15,9 @@ export const MODERATOR_IPS = [
 export const KV_APP_KEY = 'qw37tais';
 export const KV_BASE = 'https://keyvalue.immanuel.co/api/KeyVal';
 
-// Лимит текста (хранилище режет значения ~1 КБ)
-export const ABOUT_MAX = 450;
-export const ARTICLE_MAX = 450;
-export const ARTICLE_TITLE_MAX = 80;
-export const FACT_MAX = 80;
-export const FACTS_MAX = 5;
+// Лимит текста. Кириллица занимает больше байт — иначе облако отклоняет запись (~1 КБ).
+export const ABOUT_MAX = 160;
+export const ARTICLE_MAX = 180;
+export const ARTICLE_TITLE_MAX = 60;
+export const FACT_MAX = 40;
+export const FACTS_MAX = 3;
