@@ -834,6 +834,52 @@ body.modal-open {
   line-height: 1.5;
 }
 
+.photo-field .photo-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.photo-preview {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  background: #123;
+}
+
+.photo-field input[type='file'] {
+  padding: 10px;
+  font-size: 13px;
+  max-width: 100%;
+}
+
+.btn-photo-clear {
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--glass-border);
+  background: transparent;
+  color: var(--ink-dim);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.btn-photo-clear:hover {
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.photo-hint {
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--ink-dim);
+  opacity: 0.85;
+}
+
 .char-count {
   font-size: 11px;
   letter-spacing: 0.04em;

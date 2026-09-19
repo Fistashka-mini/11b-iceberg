@@ -9,6 +9,7 @@ import {
   restoreFromLog,
   newPersonId,
 } from './store.js';
+import { compressAvatarFile, uploadAvatar, resolvePhotoSrc, clearPhotoCache } from './photo.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 
@@ -107,6 +108,9 @@ export function createUI({ classInfo, tiers, classmates, onPersonSaved, onPerson
   const editStatus = $('.edit-status', editForm);
   let current = null;
   let editing = false;
+  /** @type {{ raw: string, mime: string, dataUrl: string } | null} */
+  let pendingPhoto = null;
+  let removePhoto = false;
 
   fillTierSelect($('select[name="tier"]', editForm));
 
@@ -116,6 +120,42 @@ export function createUI({ classInfo, tiers, classmates, onPersonSaved, onPerson
     el.textContent = msg || '';
     el.classList.toggle('ok', ok);
     el.classList.toggle('err', !ok && !!msg);
+  }
+
+  async function showPhotoPreview(form, src) {
+    const img = $('.photo-preview', form);
+    if (!img) return;
+    if (!src) {
+      img.hidden = true;
+      img.removeAttribute('src');
+      return;
+    }
+    const resolved = src.startsWith('kv://') ? await resolvePhotoSrc(src) : src;
+    if (!resolved) {
+      img.hidden = true;
+      return;
+    }
+    img.src = resolved;
+    img.hidden = false;
+  }
+
+  function wirePhotoInput(form, { onPicked } = {}) {
+    const input = form.querySelector('input[name="photo"]');
+    if (!input) return;
+    input.addEventListener('change', async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      try {
+        setStatus($('.edit-status', form), 'Сжимаю фото…');
+        const packed = await compressAvatarFile(file);
+        onPicked?.(packed);
+        await showPhotoPreview(form, packed.dataUrl);
+        setStatus($('.edit-status', form), 'Фото готово — нажми сохранить', true);
+      } catch (err) {
+        input.value = '';
+        setStatus($('.edit-status', form), err.message || 'Ошибка фото');
+      }
+    });
   }
 
   async function renderProfile(person) {
@@ -157,12 +197,15 @@ export function createUI({ classInfo, tiers, classmates, onPersonSaved, onPerson
     avatarImg.src = '';
     const { canvas, hasPhoto } = await drawAvatar(person, 512);
     if (current !== person) return;
-    avatarImg.src = hasPhoto ? person.photo : canvas.toDataURL();
+    avatarImg.src = canvas.toDataURL();
+    void hasPhoto;
   }
 
   function openEdit() {
     if (!current) return;
     editing = true;
+    pendingPhoto = null;
+    removePhoto = false;
     viewEl.hidden = true;
     editForm.hidden = false;
     editForm.name.value = current.name || '';
@@ -171,8 +214,10 @@ export function createUI({ classInfo, tiers, classmates, onPersonSaved, onPerson
     editForm.about.value = current.about || '';
     editForm.facts.value = (current.facts || []).join('\n');
     editForm.editor.value = getEditorName();
+    editForm.photo.value = '';
     $('[data-count="about"]', editForm).textContent = String(editForm.about.value.length);
     setStatus(editStatus, '');
+    showPhotoPreview(editForm, current.photo || '');
   }
 
   function openProfile(person) {
@@ -200,6 +245,21 @@ export function createUI({ classInfo, tiers, classmates, onPersonSaved, onPerson
     if (current) renderProfile(current);
   });
 
+  wirePhotoInput(editForm, {
+    onPicked: (packed) => {
+      pendingPhoto = packed;
+      removePhoto = false;
+    },
+  });
+
+  $('.btn-photo-clear', editForm)?.addEventListener('click', () => {
+    pendingPhoto = null;
+    removePhoto = true;
+    editForm.photo.value = '';
+    showPhotoPreview(editForm, '');
+    setStatus(editStatus, 'Фото будет убрано после сохранения', true);
+  });
+
   editForm.about.addEventListener('input', () => {
     $('[data-count="about"]', editForm).textContent = String(editForm.about.value.length);
   });
@@ -224,13 +284,25 @@ export function createUI({ classInfo, tiers, classmates, onPersonSaved, onPerson
 
     setStatus(editStatus, 'Сохраняю…');
     try {
+      if (removePhoto) {
+        after.photo = '';
+        clearPhotoCache(current.id);
+      } else if (pendingPhoto) {
+        setStatus(editStatus, 'Загружаю фото…');
+        after.photo = await uploadAvatar(current.id, pendingPhoto, (done, total) => {
+          setStatus(editStatus, `Загружаю фото… ${done}/${total}`);
+        });
+      }
+
       await savePersonChange({
         before,
         after,
         action: 'update',
-        summary: `Обновил(а) карточку «${after.name}» (ур. ${(after.tier || 0) + 1})`,
+        summary: `Обновил(а) карточку «${after.name}»${pendingPhoto || removePhoto ? ' (фото)' : ''}`,
       });
       Object.assign(current, after);
+      pendingPhoto = null;
+      removePhoto = false;
       await onPersonSaved?.(current, before);
       setStatus(editStatus, 'Сохранено', true);
       await renderProfile(current);
@@ -278,14 +350,24 @@ export function createUI({ classInfo, tiers, classmates, onPersonSaved, onPerson
   const addModal = $('#add-modal');
   const addForm = $('#add-form');
   const addStatus = $('.edit-status', addForm);
+  /** @type {{ raw: string, mime: string, dataUrl: string } | null} */
+  let addPendingPhoto = null;
   fillTierSelect($('select[name="tier"]', addForm));
+
+  wirePhotoInput(addForm, {
+    onPicked: (packed) => {
+      addPendingPhoto = packed;
+    },
+  });
 
   function openAdd() {
     closeProfile();
     closeArchive();
     addForm.reset();
+    addPendingPhoto = null;
     addForm.editor.value = getEditorName();
     fillTierSelect($('select[name="tier"]', addForm), 0);
+    showPhotoPreview(addForm, '');
     setStatus(addStatus, '');
     addModal.hidden = false;
     document.body.classList.add('modal-open');
@@ -323,6 +405,12 @@ export function createUI({ classInfo, tiers, classmates, onPersonSaved, onPerson
 
     setStatus(addStatus, 'Добавляю…');
     try {
+      if (addPendingPhoto) {
+        setStatus(addStatus, 'Загружаю фото…');
+        person.photo = await uploadAvatar(person.id, addPendingPhoto, (done, total) => {
+          setStatus(addStatus, `Загружаю фото… ${done}/${total}`);
+        });
+      }
       await savePersonChange({
         before: null,
         after: person,
@@ -330,6 +418,7 @@ export function createUI({ classInfo, tiers, classmates, onPersonSaved, onPerson
         summary: `Добавил(а) «${person.name}» на уровень ${(person.tier || 0) + 1}`,
       });
       classmates.push(person);
+      addPendingPhoto = null;
       await onPersonAdded?.(person);
       setStatus(addStatus, 'Готово', true);
       closeAdd();

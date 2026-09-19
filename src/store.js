@@ -62,7 +62,7 @@ function clampPerson(p) {
     offset: Number.isFinite(p.offset) ? Math.max(-1, Math.min(1, p.offset)) : 0,
     about: String(p.about ?? '').slice(0, ABOUT_MAX),
     facts,
-    photo: String(p.photo ?? '').slice(0, 120),
+    photo: String(p.photo ?? '').slice(0, 160),
     gallery: Array.isArray(p.gallery) ? p.gallery.slice(0, 6) : [],
     custom: !!p.custom,
     fullName: p.fullName ? String(p.fullName).slice(0, 120) : undefined,

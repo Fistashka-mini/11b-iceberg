@@ -20,7 +20,9 @@ function loadImage(src) {
   return new Promise((resolve) => {
     if (!src) return resolve(null);
     const img = new Image();
-    img.crossOrigin = 'anonymous';
+    if (!src.startsWith('data:') && !src.startsWith('blob:')) {
+      img.crossOrigin = 'anonymous';
+    }
     img.onload = () => resolve(img);
     img.onerror = () => resolve(null);
     img.src = src;
@@ -81,7 +83,12 @@ export async function drawAvatar(person, size = 256) {
   const canvas = document.createElement('canvas');
   canvas.width = canvas.height = size;
   const ctx = canvas.getContext('2d');
-  const img = await loadImage(person.photo);
+  let src = person.photo || '';
+  if (src.startsWith('kv://')) {
+    const { resolvePhotoSrc } = await import('./photo.js');
+    src = await resolvePhotoSrc(src);
+  }
+  const img = await loadImage(src);
   paint(ctx, size, person, img);
   return { canvas, hasPhoto: !!img };
 }
